@@ -64,3 +64,6 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Claude Code — local permissions (machine-specific, never commit)
+.claude/settings.local.json
