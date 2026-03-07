@@ -10,7 +10,7 @@ Visualisations graphiques des voies et métriques.
 ## 📋 Tâches
 
 ### 1. Heatmap des prises
-- [ ] [TASK-1.1] Canvas custom pour dessiner prises
+- [ ] [TASK-1.1] Canvas API (amélioration HeatmapCanvas du Sprint 3)
 - [ ] [TASK-1.2] Mapping positions → écran
 - [ ] [TASK-1.3] Couleurs par type (start/finish/foot)
 - [ ] [TASK-1.4] Zoom & pan
@@ -21,10 +21,10 @@ Visualisations graphiques des voies et métriques.
 - [ ] [TASK-2.3] Stats par zone
 
 ### 3. Graphiques de métriques
-- [ ] [TASK-3.1] Intégration fl_chart
-- [ ] [TASK-3.2] Bar chart (move count, distances)
-- [ ] [TASK-3.3] Radar chart (styles: dynamic/technical/endurance)
-- [ ] [TASK-3.4] Distribution grades
+- [ ] [TASK-3.1] Intégration Recharts (bibliothèque React)
+- [ ] [TASK-3.2] BarChart (move count, distances)
+- [ ] [TASK-3.3] RadarChart (styles: dynamic/technical/endurance)
+- [ ] [TASK-3.4] Distribution grades (BarChart)
 
 ### 4. Animations
 - [ ] [TASK-4.1] Transitions entre screens
