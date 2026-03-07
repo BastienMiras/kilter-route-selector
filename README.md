@@ -6,30 +6,32 @@
 
 Un système qui agrège les voies de la communauté Kilter Board et recommande/génère des sessions d'entraînement en fonction de critères comme la difficulté, le type de mouvements, l'endurance, etc.
 
-## 🏗️ Architecture
+## Source de données
+
+Les voies proviennent de la base officielle Kilter Board via [BoardLib](https://github.com/lemeryfertitta/BoardLib) :
+
+```bash
+pip install boardlib
+boardlib database kilter data/kilter.db
+```
+
+BoardLib télécharge la base SQLite complète (toutes les voies publiques avec métadonnées)
+sans nécessiter de compte ni de token. La commande peut être relancée pour synchroniser
+les nouvelles voies.
+
+## Architecture
 
 ```
-┌──────────────────────┐
-│   Kilter Board API   │ (api.kilterboardapp.com)
-│  - Routes publiques  │
-│  - Métadonnées       │
-└──────────┬───────────┘
-           │ scraping/polling
-           ▼
-┌──────────────────────┐
-│   Backend central    │
-│  - Agrège les voies  │
-│  - PostgreSQL        │
-│  - Cache/indexation  │
-└──────────┬───────────┘
-           │ REST API
-           ▼
-┌──────────────────────┐
-│  Client (App/PC)     │
-│  - Filtres           │
-│  - Session builder   │
-│  - Visualisation     │
-└──────────────────────┘
+boardlib sync
+    ↓
+kilter.db (SQLite)          ← données officielles Kilter Board
+    ↓
+FastAPI + aiosqlite          ← métriques calculées (climb_metrics)
+                                 container backend (:8000, interne)
+    ↓
+Nginx (reverse proxy)        ← container frontend (:80)
+    ↓
+React + TypeScript (Vite)   ← SPA responsive (Android / iPhone / PC)
 ```
 
 ## 📋 Fonctionnalités
@@ -61,13 +63,13 @@ Un système qui agrège les voies de la communauté Kilter Board et recommande/g
 ## 🚀 Roadmap
 
 ### Sprint 1 (1 semaine) - Backend fondation
-- [ ] Setup serveur (FastAPI + PostgreSQL)
-- [ ] Reverse engineering API Kilter Board
-- [ ] Scraping initial (1000+ voies)
-- [ ] Parser layouts → coordonnées
+- [ ] Setup serveur (FastAPI + aiosqlite)
+- [ ] Téléchargement base Kilter via boardlib
+- [ ] Explorer schema SQLite boardlib
+- [ ] Parser layouts → coordonnées (champ `frames`)
 - [ ] Calcul métriques de base
 - [ ] Endpoint `/api/climbs` avec filtres
-- **Milestone** : 1000+ voies en DB avec métriques
+- **Milestone** : API fonctionnelle sur la base boardlib avec métriques
 
 ### Sprint 2 (1 semaine) - Session Builder
 - [ ] Algorithme de scoring par style
@@ -76,12 +78,13 @@ Un système qui agrège les voies de la communauté Kilter Board et recommande/g
 - [ ] Tests avec différents profils utilisateur
 - **Milestone** : Sessions de qualité générées
 
-### Sprint 3 (1 semaine) - Client MVP
-- [ ] Setup Flutter (Android + Desktop)
-- [ ] Écrans : Home, Session, Detail
-- [ ] Intégration API client
-- [ ] Cache local (Hive/sqflite)
-- **Milestone** : App fonctionnelle end-to-end
+### Sprint 3 (1 semaine) - Client MVP (React + Nginx)
+- [ ] Setup React + TypeScript + Vite + configuration Nginx
+- [ ] Dockerfiles + podman-compose.yml (2 containers)
+- [ ] API client TanStack Query (climbs, sessions)
+- [ ] Pages : Home (filtres), Session (liste), Detail (métriques)
+- [ ] Composants : FilterPanel, RouteCard, HeatmapCanvas
+- **Milestone** : App accessible sur http://localhost, responsive mobile/desktop
 
 ### Sprint 4 (1 semaine) - Visualisation
 - [ ] Heatmap des prises sur canvas
@@ -130,101 +133,63 @@ Un système qui agrège les voies de la communauté Kilter Board et recommande/g
 ### Backend
 - **Langage** : Python 3.11+
 - **Framework** : FastAPI
-- **Database** : PostgreSQL 15+ (avec PostGIS pour spatial queries)
-- **Cache** : Redis
-- **Queue** : BullMQ / Celery (scraping async)
+- **Database** : SQLite via boardlib (`kilter.db`)
+- **Driver async** : aiosqlite
 - **Hosting** : Railway / Fly.io (MVP) → VPS (production)
 
 ### Client
-- **Framework** : Flutter 3.x
-- **Platforms** : Android, Windows, Linux, macOS
-- **State management** : Riverpod / Bloc
-- **Local DB** : Hive / sqflite
-- **HTTP** : Dio
+- **Framework** : React 18 + TypeScript + Vite
+- **Platforms** : Tous navigateurs (Android, iPhone, PC)
+- **Serving** : Nginx (static files + reverse proxy /api/*)
+- **Data fetching** : TanStack Query
+- **Navigation** : React Router v6
+- **Visualisation** : Canvas API (heatmap), Recharts (graphiques)
+
+### Orchestration
+- **Containers** : Podman + podman-compose
+- **Services** : frontend (Nginx), backend (FastAPI/Uvicorn)
 
 ### DevOps
 - **CI/CD** : GitHub Actions
 - **Monitoring** : Sentry (errors), Prometheus (metrics)
 - **Logs** : Loki / CloudWatch
 
-## 📐 Schéma de données
+## Schéma de données
 
-### Table `climbs`
+La table `climbs` est fournie par boardlib (schema officiel Kilter Board).
+Colonnes clés : `uuid`, `name`, `setter_username`, `difficulty`, `frames`,
+`ascensionist_count`, `quality_average`, `is_listed`.
+
+### Table `climb_metrics` (ajoutée par le projet)
 ```sql
-CREATE TABLE climbs (
-    id SERIAL PRIMARY KEY,
-    kilter_id INT UNIQUE NOT NULL,
-    name VARCHAR(255),
-    setter VARCHAR(100),
-    setter_id INT,
-    grade VARCHAR(10),
-    angle INT,
-    layout TEXT NOT NULL,
-    ascents INT DEFAULT 0,
-    quality_avg DECIMAL(2,1),
-    is_public BOOLEAN DEFAULT true,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    last_scraped_at TIMESTAMP
+CREATE TABLE IF NOT EXISTS climb_metrics (
+    climb_uuid TEXT PRIMARY KEY REFERENCES climbs(uuid) ON DELETE CASCADE,
+    move_count INTEGER,
+    avg_distance REAL,
+    max_reach REAL,
+    vertical_range INTEGER,
+    horizontal_range INTEGER,
+    symmetry_score REAL,
+    hold_density REAL,
+    style_dynamic_score REAL,
+    style_technical_score REAL,
+    style_endurance_score REAL,
+    computed_at TEXT DEFAULT (datetime('now'))
 );
 ```
 
-### Table `holds`
-```sql
-CREATE TABLE holds (
-    id SERIAL PRIMARY KEY,
-    climb_id INT REFERENCES climbs(id),
-    position INT NOT NULL,
-    x INT,
-    y INT,
-    radius INT,
-    hold_order INT,
-    is_start BOOLEAN,
-    is_finish BOOLEAN,
-    is_foot_only BOOLEAN
-);
+## Données Kilter Board
+
+Les données proviennent de boardlib qui synchronise la base officielle Kilter Board.
+Aucune authentification manuelle ni reverse engineering requis.
+
+```bash
+# Téléchargement initial
+boardlib database kilter data/kilter.db
+
+# Mise à jour (sync incrémental)
+boardlib database kilter data/kilter.db
 ```
-
-### Table `climb_metrics`
-```sql
-CREATE TABLE climb_metrics (
-    climb_id INT PRIMARY KEY REFERENCES climbs(id),
-    move_count INT,
-    avg_distance DECIMAL(5,2),
-    max_reach DECIMAL(5,2),
-    vertical_range INT,
-    horizontal_range INT,
-    symmetry_score DECIMAL(3,2),
-    hold_density DECIMAL(5,4),
-    style_dynamic_score DECIMAL(5,2),
-    style_technical_score DECIMAL(5,2),
-    style_endurance_score DECIMAL(5,2),
-    computed_at TIMESTAMP
-);
-```
-
-## 🔐 API Kilter Board (reverse engineered)
-
-### Authentification
-```http
-POST https://api.kilterboardapp.com/v1/logins
-Content-Type: application/json
-
-{
-  "username": "...",
-  "password": "...",
-  "tou": "accepted",
-  "pp": "accepted"
-}
-```
-
-### Récupération de voies
-```http
-GET https://api.kilterboardapp.com/v1/climbs/{id}
-Authorization: Bearer {token}
-```
-
-**Note** : API non officielle, utilisation à vos risques.
 
 ## 📖 Algorithmes clés
 
