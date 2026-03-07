@@ -82,35 +82,42 @@ Un système qui :
 
 ## 🏗️ Architecture technique
 
-### Option retenue : **Agrégation communautaire**
+### Option retenue : **Agrégation communautaire via BoardLib**
 
 **Avantages** :
 - Beaucoup plus de voies disponibles
 - Métadonnées enrichies (popularité, notes)
 - Recommandations communautaires possibles
 - Statistiques globales (trending, top setters)
+- BoardLib télécharge la base complète en une commande (pas de scraping manuel)
 
 **Schéma** :
 ```
-API Kilter Board
-    ↓ (scraping)
-Backend central (PostgreSQL)
-    ↓ (REST API)
-Client (Flutter - Android/Desktop)
+boardlib sync → kilter.db (SQLite)
+                    ↓
+             FastAPI (aiosqlite)   ← container backend (:8000, interne)
+                    ↓
+             Nginx (reverse proxy) ← container frontend (:80)
+                    ↓
+             React + TypeScript    ← SPA (Android / iPhone / PC)
 ```
 
 ### Stack technique
 
 **Backend** :
 - Python + FastAPI
-- PostgreSQL (voies, prises)
-- Redis (cache)
-- Worker async (scraping continu)
+- SQLite via boardlib (voies, prises)
+- aiosqlite (accès async)
+- Worker de re-sync boardlib périodique
 
 **Client** :
-- Flutter (cross-platform : Android + Windows/Linux/macOS)
-- Hive/sqflite (cache local)
-- Dio (HTTP client)
+- React 18 + TypeScript + Vite (SPA cross-platform)
+- Nginx (serving static + reverse proxy vers FastAPI)
+- Podman + podman-compose (orchestration containers)
+- TanStack Query (data fetching, cache, états loading/error)
+- React Router v6 (navigation SPA)
+- Canvas API / SVG (heatmap des prises)
+- Recharts (graphiques de métriques)
 
 ---
 
@@ -240,12 +247,12 @@ Nombre de prises par unité de surface.
 ### Sprint 3 (1 semaine) - Client MVP
 **Objectif** : App fonctionnelle end-to-end
 
-- [ ] Setup Flutter (Android + Desktop)
-- [ ] Écran Home (filtres, bouton génération)
-- [ ] Écran Session (liste des voies)
-- [ ] Écran Detail (métriques, visualisation simple)
-- [ ] Intégration API client (Dio)
-- [ ] Cache local (Hive)
+- [ ] Setup React + TypeScript + Vite
+- [ ] Configuration Nginx (serve static + proxy /api/*)
+- [ ] Dockerfiles + podman-compose.yml (2 containers)
+- [ ] API client (TanStack Query → /api/climbs, /api/sessions)
+- [ ] Pages : Home (filtres), Session (liste), Detail (métriques)
+- [ ] Composants : FilterPanel, RouteCard, HeatmapCanvas
 
 **Livrables** :
 - App testable sur Android/PC
@@ -303,12 +310,14 @@ GET https://api.kilterboardapp.com/v1/climbs/{id}
 Authorization: Bearer {token}
 ```
 
-### Stratégie de scraping
+### Stratégie de synchronisation
 
-1. **Scraping initial** : Itérer sur IDs de voies (1 à N)
-2. **Polling régulier** : Nouvelles voies toutes les 24h
-3. **Rate limiting** : 1 req/sec max pour éviter ban
-4. **Cache** : Stocker localement, ne pas re-scraper
+BoardLib remplace entièrement le scraping manuel :
+
+1. **Téléchargement initial** : `boardlib database kilter data/kilter.db`
+2. **Mise à jour périodique** : relancer la même commande (sync incrémental)
+3. **Pas de rate limiting à gérer** : boardlib gère la communication avec le serveur officiel
+4. **Pas d'authentification requise** : les données publiques sont accessibles directement
 
 ### Format de layout
 
@@ -440,7 +449,7 @@ y = (position & 0xff00) >> 8 # 8 bits haut
 | **Plateforme client** | Android + PC | Besoin identifié |
 | **Approche scoring** | Règles simples d'abord, ML ensuite | Pragmatique, MVP rapide |
 | **Stack backend** | Python + FastAPI | Familiarité, rapidité de dev |
-| **Stack client** | Flutter | Cross-platform, un seul codebase |
+| **Stack client** | React + TypeScript + Nginx (Podman) | Web universel (Android/iPhone/PC), pas d'installation native |
 | **Scraping** | Async worker continu | Données toujours à jour |
 
 ---
