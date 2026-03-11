@@ -1,8 +1,13 @@
 # CI/CD Architecture Design — Kilter Route Selector
 
 **Date:** 2026-03-01
-**Status:** Approved
-**Stack:** GitHub Actions + GHCR + Kamal v2 + VPS self-hosted
+**Status:** ⚠️ PARTIELLEMENT SUPERSÉDÉ — voir `docs/plans/2026-03-11-iac-podman-design.md`
+
+> **Ce qui reste valide :** git flow (feature → develop → release → main), structure des 3 workflows GitHub Actions, stratégie de tagging GHCR.
+> **Ce qui est remplacé :** Kamal v2 → **Ansible + podman-compose**. Pas de Dockerfile multi-env Kamal — utiliser les `compose.{env}.yml` de `infra/`.
+
+**Stack originale :** GitHub Actions + GHCR + Kamal v2 + VPS self-hosted
+**Stack actuelle :** GitHub Actions + GHCR + Ansible + podman-compose + VPS self-hosted
 
 ---
 
