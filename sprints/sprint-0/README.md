@@ -20,7 +20,7 @@ Mettre en place toute l'infrastructure avant d'écrire le moindre code applicati
 ```
 VPS unique
 ├── /opt/kilter-prod/     → nginx :80    → fastapi :8000 (prod)
-├── /opt/kilter-staging/  → nginx :8080  → fastapi :8001 (staging)
+├── /opt/kilter-staging/  → nginx :8081  → fastapi :8001 (staging)
 └── /opt/kilter-dev/      → nginx :8082  → fastapi :8002 (dev-vps)
 
 Local dev : compose.dev.yml (volumes montés, hot-reload)

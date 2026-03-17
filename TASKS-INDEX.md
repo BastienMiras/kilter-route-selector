@@ -29,7 +29,7 @@
 
 ### ⚙️ Ansible (5 tâches, ~6h)
 8. `TASK-0.8` - Role: podman (install Podman + podman-compose) [1h]
-9. `TASK-0.9` - Role: firewall (ufw ports 22/80/443/8080/8082) [1h]
+9. `TASK-0.9` - Role: firewall (ufw ports 22/80/443/8081/8082) [1h]
 10. `TASK-0.10` - Role: app (deploy + health check) [2h]
 11. `TASK-0.11` - Inventory + group_vars + playbook-provision.yml [1h]
 12. `TASK-0.12` - playbook-deploy.yml [1h]

@@ -32,7 +32,7 @@ React + TypeScript + Vite (SPA — responsive web, mobile-friendly)
 - **Ansible** — idempotent VPS provisioning (roles: podman, firewall, app)
 - **GitHub Actions** — CI/CD (lint + test + build gate, auto-deploy staging, manual prod)
 - **GHCR** — container image registry
-- Single VPS hosts 3 environments: dev (:8082), staging (:8080), prod (:80)
+- Single VPS hosts 3 environments: dev (:8082), staging (:8081), prod (:80)
 
 ### Backend Stack (Sprint 1-2)
 - **Python 3.12**, FastAPI, aiosqlite

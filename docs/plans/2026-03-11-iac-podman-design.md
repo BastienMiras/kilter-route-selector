@@ -30,7 +30,7 @@ Three stacks run on a single VPS, isolated by Podman networks and directories:
 ```
 VPS
 ├── /opt/kilter-prod/          :80 / :443  → backend internal :8000
-├── /opt/kilter-staging/       :8080       → backend internal :8001
+├── /opt/kilter-staging/       :8081       → backend internal :8001
 └── /opt/kilter-dev/           :8082       → backend internal :8002
 ```
 
@@ -52,7 +52,7 @@ infra/
 │   ├── group_vars/
 │   │   ├── all.yml                  # common vars (deploy_user, app_base_dir)
 │   │   ├── dev.yml                  # port 8082, image tag from branch
-│   │   ├── staging.yml              # port 8080, image tag develop-<SHA>
+│   │   ├── staging.yml              # port 8081, image tag develop-<SHA>
 │   │   └── prod.yml                 # port 80/443, image tag v*.*.*
 │   ├── playbook-provision.yml       # one-time VPS bootstrap
 │   ├── playbook-deploy.yml          # deploy (pull image + compose up)
@@ -66,7 +66,7 @@ infra/
 │
 ├── compose.dev.yml                  # local dev (volumes mounted, hot-reload)
 ├── compose.vps-dev.yml              # dev on VPS (built images, port 8082)
-├── compose.staging.yml              # staging (GHCR develop-<SHA>, port 8080)
+├── compose.staging.yml              # staging (GHCR develop-<SHA>, port 8081)
 ├── compose.prod.yml                 # prod (GHCR v*.*.*, port 80/443)
 │
 ├── .env.example                     # committed template with all keys, empty values
@@ -86,7 +86,7 @@ infra/
 ```
 Internet
     │
-    ▼ :80/:443 (prod) | :8080 (staging) | :8082 (dev)
+    ▼ :80/:443 (prod) | :8081 (staging) | :8082 (dev)
 ┌─────────────────────┐
 │   frontend          │  nginx:alpine — serves React build + proxies /api/*
 └────────┬────────────┘
@@ -117,7 +117,7 @@ Internet
 |---|---|---|---|---|
 | `compose.dev.yml` | local build | volume + `--reload` | 8000 + 5173 | no |
 | `compose.vps-dev.yml` | built images | built | 8082 | unless-stopped |
-| `compose.staging.yml` | GHCR `develop-<SHA>` | built | 8080 | unless-stopped |
+| `compose.staging.yml` | GHCR `develop-<SHA>` | built | 8081 | unless-stopped |
 | `compose.prod.yml` | GHCR `v*.*.*` | built | 80/443 | always |
 
 ---
@@ -171,7 +171,7 @@ tag v*.*.* ─push──▶ deploy-prod.yml
   - 22 → SSH
   - 80 → prod HTTP
   - 443 → prod HTTPS
-  - 8080 → staging (open or IP-restricted)
+  - 8081 → staging (open or IP-restricted)
   - 8082 → dev (open or IP-restricted)
 
 ### `app` role
@@ -261,6 +261,7 @@ test:            ## Run all tests
 | 0.13 | deploy-staging.yml | Auto-deploy staging on push to develop |
 | 0.14 | deploy-prod.yml | Manual-approval prod deploy on tag |
 | 0.15 | Update TASKS-INDEX.md | Sprint 0 added before Sprint 1 |
+| 0.16 | sprints/sprint-0/README.md | Sprint overview + task table |
 
 ---
 
