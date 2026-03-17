@@ -97,8 +97,8 @@ jobs:
         run: |
           ansible-playbook infra/ansible/playbook-deploy.yml \
             -e env=staging \
-            -e image_tag=${{ needs.build-and-push.outputs.image_tag }} \
-            -e ghcr_token=${{ secrets.GHCR_TOKEN }}
+            -e "image_tag=${{ needs.build-and-push.outputs.image_tag }}" \
+            -e "ghcr_token=${{ secrets.GHCR_TOKEN }}"
         working-directory: .
 ```
 

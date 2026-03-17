@@ -18,6 +18,7 @@ Créer l'inventaire Ansible, les variables par environnement et le playbook de p
 - [ ] Créer `infra/ansible/group_vars/staging.yml`
 - [ ] Créer `infra/ansible/group_vars/prod.yml`
 - [ ] Créer `infra/ansible/playbook-provision.yml`
+- [ ] Installer les collections : `ansible-galaxy collection install -r requirements.yml`
 - [ ] Vérifier la syntaxe du playbook avec `--syntax-check`
 - [ ] Linter tout le répertoire ansible avec `ansible-lint`
 
