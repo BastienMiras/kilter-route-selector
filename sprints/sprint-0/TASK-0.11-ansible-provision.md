@@ -73,6 +73,7 @@ app_base_dir: /opt
 **infra/ansible/group_vars/dev.yml**
 ```yaml
 env: dev
+compose_name: vps-dev   # → infra/compose.vps-dev.yml (≠ compose.dev.yml qui est le compose local)
 app_port: 8082
 image_tag: dev-latest
 log_level: debug
@@ -81,6 +82,7 @@ log_level: debug
 **infra/ansible/group_vars/staging.yml**
 ```yaml
 env: staging
+compose_name: staging   # → infra/compose.staging.yml
 app_port: 8081
 image_tag: develop-latest
 log_level: info
@@ -89,6 +91,7 @@ log_level: info
 **infra/ansible/group_vars/prod.yml**
 ```yaml
 env: prod
+compose_name: prod      # → infra/compose.prod.yml
 app_port: 80
 # image_tag: set at deploy time (e.g. v1.2.3)
 log_level: warning

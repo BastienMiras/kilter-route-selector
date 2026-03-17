@@ -3,7 +3,7 @@
 **Sprint** : 0
 **Estimation** : 1h
 **Priorité** : Haute
-**Dépendances** : TASK-0.1, TASK-0.2, TASK-0.4
+**Dépendances** : TASK-0.1, TASK-0.2, TASK-0.4, TASK-0.5
 
 ## Objectif
 

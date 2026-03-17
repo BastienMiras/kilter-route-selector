@@ -81,7 +81,7 @@ KILTER_API_TOKEN={{ kilter_api_token | default('') }}
 
 - name: Copy compose file for this environment
   ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../compose.{{ env }}.yml"
+    src: "{{ playbook_dir }}/../compose.{{ compose_name }}.yml"
     dest: "/opt/kilter-{{ env }}/compose.yml"
     owner: "{{ deploy_user }}"
     group: "{{ deploy_user }}"
@@ -115,6 +115,8 @@ KILTER_API_TOKEN={{ kilter_api_token | default('') }}
     IMAGE_TAG: "{{ image_tag }}"
 
 - name: Wait for health check
+  # Le health check passe par Nginx (:app_port) qui strip /api/ avant de
+  # transmettre au backend — la requête arrive sur le backend comme GET /health
   ansible.builtin.uri:
     url: "http://localhost:{{ app_port }}/api/health"
     method: GET

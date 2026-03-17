@@ -11,7 +11,7 @@ Mettre à jour le README du Sprint 0 pour refléter les livraisons complètes et
 
 ## Checklist
 
-- [ ] Vérifier que `sprints/sprint-0/README.md` documente toutes les livraisons du sprint
+- [ ] Créer `sprints/sprint-0/README.md` avec le tableau des livraisons et l'architecture déployée
 - [ ] Marquer les 17 tâches Sprint 0 comme complètes dans `TASKS-INDEX.md` (ajouter ✅)
 - [ ] Vérifier que le milestone Sprint 0 est bien décrit : `make up` fonctionnel, CI active, VPS provisionnable
 
