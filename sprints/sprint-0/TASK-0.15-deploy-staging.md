@@ -5,6 +5,37 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.14, TASK-0.12
 
+## Description
+
+Le déploiement en staging est **automatique** : à chaque push sur la branche `develop` (ce qui
+correspond à chaque PR mergée), les nouvelles images sont buildées, publiées sur GHCR et déployées
+sur le VPS sans intervention humaine. C'est le principe du **Continuous Deployment** (CD).
+
+Ce workflow a deux jobs qui s'exécutent séquentiellement :
+
+**Job 1 — build-and-push :**
+- Calcule un tag d'image unique basé sur le SHA git court (`develop-abc1234`). Cela permet de
+  savoir exactement quelle version du code est déployée, et de revenir en arrière facilement.
+- Se connecte à GHCR avec le secret `GHCR_TOKEN` (un Personal Access Token GitHub).
+- Build et push les deux images avec **deux tags** : le tag précis (`develop-abc1234`) pour la
+  traçabilité, et `develop-latest` pour les déploiements sans tag précis.
+
+**Job 2 — deploy :**
+- Attend que le job 1 soit terminé (`needs: build-and-push`).
+- Récupère le tag d'image calculé par le job 1 via `outputs` (mécanisme de communication entre jobs).
+- Installe Ansible et écrit la clé SSH privée (stockée en secret GitHub) sur le filesystem du runner.
+- Remplace le placeholder `VPS_IP` dans l'inventaire par l'IP réelle du VPS (aussi en secret).
+- Lance le playbook de déploiement pour l'environnement staging.
+
+**Comment réaliser cette tâche :**
+
+1. Crée `.github/workflows/deploy-staging.yml` avec le déclencheur `push` sur `develop`.
+2. Configure le job `build-and-push` avec le calcul du tag, le login GHCR, le build et le push des
+   deux images. Expose le tag en `output` du job.
+3. Configure le job `deploy` qui dépend du premier, installe Ansible, écrit la clé SSH (permissions
+   `chmod 600` obligatoires), patche l'inventaire et lance le playbook.
+4. Documente les trois secrets GitHub requis : `GHCR_TOKEN`, `VPS_HOST`, `VPS_SSH_KEY`.
+
 ## Objectif
 
 Créer le workflow GitHub Actions de déploiement staging déclenché automatiquement sur chaque push vers la branche `develop` : build + push des images vers GHCR, puis déploiement via Ansible sur le VPS.

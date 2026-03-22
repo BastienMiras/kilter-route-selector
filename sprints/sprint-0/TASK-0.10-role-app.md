@@ -5,6 +5,40 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.7, TASK-0.8, TASK-0.9
 
+## Description
+
+Le rôle `app` est le cœur du déploiement : c'est lui qui prend en charge toute la logique pour
+mettre à jour l'application sur le VPS. Les rôles `podman` et `firewall` n'ont besoin d'être
+exécutés qu'une seule fois (provisioning initial). Le rôle `app`, lui, est exécuté à chaque
+déploiement.
+
+**Jinja2** est le moteur de templates d'Ansible (et aussi de Python en général). Un template `.j2`
+est un fichier texte avec des variables entre doubles accolades (`{{ variable }}`). Ansible remplace
+ces variables par leurs valeurs au moment du déploiement. Ici, le template `env.j2` génère le
+fichier `.env` avec les bonnes valeurs pour chaque environnement (dev, staging, prod) sans dupliquer
+le fichier trois fois.
+
+Le flux de déploiement suit une logique précise :
+1. Créer les dossiers nécessaires sur le serveur avec les bons droits (propriétaire `deploy`, permissions `0750`).
+2. Générer le fichier `.env` depuis le template Jinja2.
+3. Copier le bon fichier compose (vps-dev, staging ou prod) selon l'environnement.
+4. Se connecter au registre GHCR pour télécharger les images privées (`no_log: true` masque le token).
+5. Pull les nouvelles images.
+6. Relancer le stack avec `up -d --remove-orphans` (arrête les anciens conteneurs et démarre les nouveaux).
+7. Attendre que le health check passe (jusqu'à 10 tentatives espacées de 3 secondes) avant de
+   déclarer le déploiement réussi.
+
+Le health check passe par Nginx (port `app_port`) qui strip `/api/` avant de transmettre au backend.
+
+**Comment réaliser cette tâche :**
+
+1. Crée `roles/app/meta/main.yml`, `roles/app/templates/env.j2` et `roles/app/tasks/main.yml`.
+2. Le template `env.j2` doit utiliser `{{ env }}`, `{{ log_level | default('info') }}` et
+   `{{ kilter_api_token | default('') }}`.
+3. Les tasks doivent créer les dossiers, placer le `.env`, copier le compose, login GHCR (avec
+   `no_log: true`), pull les images, démarrer le stack, et vérifier le health check avec `uri`.
+4. Lance `ansible-lint roles/app/` pour vérifier.
+
 ## Objectif
 
 Créer le rôle Ansible `app` qui déploie le stack kilter sur le VPS via podman-compose : création des répertoires, génération du `.env` depuis template Jinja2, pull des images GHCR, démarrage du compose et health-check.

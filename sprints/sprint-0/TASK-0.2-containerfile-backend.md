@@ -5,6 +5,36 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.1
 
+## Description
+
+Un **conteneur** est un environnement d'exécution isolé et portable : il embarque l'application et
+toutes ses dépendances (Python, bibliothèques, configuration) dans une image autonome. N'importe quel
+serveur disposant de Podman ou Docker peut exécuter cette image et obtenir exactement le même
+comportement, quelle que soit sa configuration. C'est le cœur du principe « build once, run anywhere ».
+
+**Podman** est l'alternative sans daemon (sans processus root permanent) à Docker. Il fonctionne en
+mode rootless — un avantage de sécurité important sur un VPS partagé. Les commandes sont identiques
+à Docker : `podman build`, `podman run`, `podman push`.
+
+Un **Containerfile multi-stage** divise la construction de l'image en plusieurs étapes :
+- Le stage `builder` installe les dépendances Python dans un dossier dédié (`/install`). Ce stage
+  utilise l'image complète `python:3.12` qui contient tous les outils de compilation nécessaires.
+- Le stage `runtime` repart d'une image légère (`python:3.12-slim`) et copie uniquement les fichiers
+  compilés depuis le stage précédent. Le résultat est une image finale beaucoup plus petite (~150 Mo
+  au lieu de ~900 Mo), ce qui accélère les pull et réduit la surface d'attaque.
+
+La variable `PYTHONUNBUFFERED=1` force Python à écrire ses logs en temps réel (sans buffer), ce qui
+est essentiel pour voir les logs dans un conteneur.
+
+**Comment réaliser cette tâche :**
+
+1. Crée le dossier `infra/` s'il n'existe pas encore.
+2. Écris `infra/Containerfile.backend` avec les deux stages décrits dans l'exemple.
+3. Build l'image avec `podman build -f infra/Containerfile.backend -t kilter-backend:test .`
+   (le `.` à la fin est le contexte de build — le répertoire depuis lequel les `COPY` sont résolus).
+4. Lance un conteneur de test en arrière-plan avec `podman run --rm -d -p 8000:8000 kilter-backend:test`
+   et vérifie que `/health` répond correctement. Arrête le conteneur ensuite.
+
 ## Objectif
 
 Créer un Containerfile multi-stage pour le backend Python/FastAPI, produisant une image slim prête pour la CI et le déploiement VPS.

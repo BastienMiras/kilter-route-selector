@@ -5,6 +5,37 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.1, TASK-0.2, TASK-0.4, TASK-0.5
 
+## Description
+
+**podman-compose** (ou docker-compose) est un outil qui permet de décrire et lancer plusieurs
+conteneurs en même temps via un fichier YAML. Sans lui, il faudrait lancer chaque conteneur
+manuellement avec une longue commande `podman run`. Le fichier compose définit les services, leurs
+options, comment ils communiquent et quels ports ils exposent.
+
+En développement local, on a besoin d'un comportement spécifique : **le hot-reload**. C'est la
+capacité du serveur à détecter automatiquement les modifications du code source et à se recharger
+sans qu'on ait besoin de stopper et relancer le conteneur. Uvicorn supporte cela avec l'option
+`--reload`. Pour que ça fonctionne, le code source du dossier `backend/` doit être directement
+accessible depuis l'intérieur du conteneur — c'est ce que fait le **volume mount** (`../backend:/app`) :
+il monte le dossier local dans le conteneur. Chaque sauvegarde de fichier est immédiatement visible.
+
+Le volume SQLite (`../data:/app/data`) fonctionne de la même façon : la base de données persiste sur
+le disque local entre les arrêts et démarrages du conteneur.
+
+En développement, les ports sont exposés directement : backend sur 8000 et frontend sur 5173. Le
+réseau interne `kilter-dev-net` permet aux conteneurs de se parler par leur nom de service (`backend`,
+`frontend`) sans passer par l'hôte.
+
+**Comment réaliser cette tâche :**
+
+1. Crée `infra/compose.dev.yml` avec les deux services `backend` et `frontend`.
+2. Pour le service `backend` : utilise `build:` pour builder depuis le Containerfile, monte les
+   volumes source et data, surcharge la commande avec `--reload`, expose le port 8000.
+3. Pour le service `frontend` : utilise aussi `build:`, expose le port 5173 (mappé sur le 80 interne),
+   déclare `depends_on: backend` pour démarrer dans le bon ordre.
+4. Crée le dossier `data/` avec un `.gitkeep` pour que git versionne le dossier vide.
+5. Lance avec `podman-compose -f infra/compose.dev.yml up -d` et vérifie les deux ports.
+
 ## Objectif
 
 Créer le fichier compose pour le développement local avec montage de volumes source pour le hot-reload uvicorn, exposant le backend sur :8000 et le frontend sur :5173.

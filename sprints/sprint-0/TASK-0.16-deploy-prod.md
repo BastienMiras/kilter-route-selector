@@ -5,6 +5,37 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.15
 
+## Description
+
+Le déploiement en production est beaucoup plus prudent que le staging. On ne déploie pas
+automatiquement chaque commit — on déploie uniquement des versions explicitement taguées et
+approuvées manuellement. Cette rigueur est normale : une erreur en production impacte les
+utilisateurs réels.
+
+**Le déclencheur par tag** : le workflow se déclenche uniquement quand on crée un tag git suivant
+le format `v*.*.*` (semantic versioning : `v1.0.0`, `v1.2.3`, etc.). Créer un tag est un geste
+délibéré qui signifie « cette version est prête pour la production ».
+
+**Re-tagging au lieu de rebuild** : plutôt que de reconstruire les images depuis zéro, on réutilise
+les images staging déjà testées (tag `develop-latest`). On leur applique simplement un nouveau tag
+(`v1.0.0` et `latest`). C'est plus rapide et garantit qu'exactement les mêmes images qui ont tourné
+en staging vont en production — pas une reconstruction potentiellement différente.
+
+**GitHub Environments et approbation manuelle** : `environment: production` dans le job de déploiement
+active le système d'approbation de GitHub. Quand le workflow arrive au job `deploy`, il se met en
+pause et envoie une notification aux reviewers configurés. Un humain doit cliquer « Approve » dans
+l'interface GitHub pour que le déploiement continue. C'est la barrière de sécurité finale.
+
+**Comment réaliser cette tâche :**
+
+1. Crée `.github/workflows/deploy-prod.yml` avec le déclencheur `push: tags: ["v*.*.*"]`.
+2. Dans le job `build-and-push` : extrait le tag de version depuis `GITHUB_REF` (variable d'environnement
+   GitHub qui contient `refs/tags/v1.0.0`), pull les images `develop-latest`, re-tag et push.
+3. Dans le job `deploy` : ajoute `environment: production`. Le reste est identique au staging mais
+   avec `env=prod`.
+4. Configure l'environnement `production` dans les settings GitHub du repo (Settings → Environments
+   → New environment) et ajoute les reviewers requis.
+
 ## Objectif
 
 Créer le workflow GitHub Actions de déploiement production déclenché sur les tags `v*.*.*`, avec approbation manuelle obligatoire via GitHub Environments avant le déploiement sur le VPS.

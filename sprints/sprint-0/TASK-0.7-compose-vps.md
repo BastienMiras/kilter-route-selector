@@ -5,6 +5,37 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.6
 
+## Description
+
+Sur le VPS (le serveur distant), l'approche est différente du développement local. On ne veut pas
+builder les images sur le serveur — c'est lent et le serveur n'a pas forcément les outils nécessaires.
+À la place, les images sont **buildées en CI** (GitHub Actions) et **poussées vers GHCR** (GitHub
+Container Registry, le registre d'images de GitHub), puis le serveur les **pull** (télécharge) et
+les démarre. C'est le flux standard en production.
+
+Les fichiers VPS compose utilisent donc `image:` au lieu de `build:` — ils pointent vers l'image
+déjà construite sur GHCR avec un tag spécifique.
+
+Le projet a **trois environnements sur le même VPS** :
+- **vps-dev** (port 8082) : environnement de développement sur le VPS, déployé manuellement pour
+  des tests ponctuels. Tag `dev-latest`.
+- **staging** (port 8081) : déployé automatiquement à chaque push sur la branche `develop`. Sert
+  à valider les nouvelles fonctionnalités avant la production. Tag `develop-latest`.
+- **prod** (port 80) : l'environnement public, stable. Déployé uniquement sur des tags `v*.*.*`
+  après approbation manuelle. Tag `latest`.
+
+La variable `IMAGE_TAG` est configurable via l'environnement, avec une valeur par défaut. Cela
+permet à Ansible de déployer un tag précis (`develop-abc1234`) tout en ayant un fallback.
+
+**Comment réaliser cette tâche :**
+
+1. Crée `infra/compose.vps-dev.yml` en vous basant sur le modèle : services `backend` et `frontend`
+   avec `image: ghcr.io/bastienmiras/...`, `env_file` pointant vers `/opt/kilter-dev/.env`, port 8082.
+2. Crée `infra/compose.staging.yml` de la même façon avec le port 8081 et le tag `develop-latest`.
+3. Crée `infra/compose.prod.yml` avec le port 80, `restart: always` (redémarre automatiquement même
+   au reboot du serveur) et le tag `latest`.
+4. Valide la syntaxe des trois fichiers avec `podman-compose -f <fichier> config`.
+
 ## Objectif
 
 Créer les trois variantes compose pour les environnements VPS (dev :8082, staging :8081, prod :80), chacune tirant ses images depuis GHCR avec un tag configurable.

@@ -5,6 +5,41 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.2, TASK-0.4
 
+## Description
+
+La **CI** (Continuous Integration, intégration continue) est un ensemble de vérifications automatiques
+qui s'exécutent à chaque modification du code. L'objectif est de détecter les problèmes le plus tôt
+possible — avant qu'un code cassé ne soit fusionné dans la branche principale et ne bloque toute
+l'équipe.
+
+**GitHub Actions** est le service d'automatisation intégré à GitHub. Un fichier YAML dans
+`.github/workflows/` décrit ce qui doit s'exécuter, quand et comment. GitHub met à disposition des
+machines virtuelles (runners) pour exécuter ces workflows gratuitement pour les repos publics.
+
+Notre workflow CI comporte trois jobs indépendants qui s'exécutent en parallèle :
+
+1. **lint-backend** : vérifie que le code Python respecte les conventions de style avec **ruff**.
+   Ruff est un linter Python ultra-rapide (écrit en Rust). Un code mal formaté ou avec des imports
+   inutilisés est détecté ici.
+
+2. **test-backend** : exécute les tests avec **pytest**. En Sprint 0, il n'y a pas encore de tests,
+   donc ce job passe « vacuously » (sans rien faire). Il sera rempli en Sprint 1 et suivants.
+
+3. **build-images** : build les deux images Containerfile avec Podman sur le runner CI, puis lance
+   le backend pour vérifier que `/health` répond. `curl --fail` retourne un code d'erreur non-zéro
+   si la réponse HTTP n'est pas 2xx, ce qui fait échouer le workflow.
+
+Si l'un de ces trois jobs échoue, GitHub bloque la fusion de la PR. C'est le filet de sécurité.
+
+**Comment réaliser cette tâche :**
+
+1. Crée `.github/workflows/ci.yml` avec le déclencheur `pull_request` sur les branches `develop` et
+   `main`.
+2. Ajoute les trois jobs avec leurs steps : checkout, setup-python, installation des dépendances,
+   exécution des commandes. Pour `build-images`, installe Podman sur le runner Ubuntu avec `apt-get`.
+3. Ajoute le health-check avec `curl --fail` après avoir démarré le conteneur backend en arrière-plan.
+4. Optionnellement, valide la syntaxe du workflow avec `actionlint` en local.
+
 ## Objectif
 
 Créer le workflow GitHub Actions de CI qui bloque toute PR vers `develop` ou `main` en cas d'échec du lint backend (ruff), des tests pytest ou du build des images Podman.

@@ -5,6 +5,40 @@
 **Priorité** : Haute
 **Dépendances** : Aucune
 
+## Description
+
+Un serveur VPS exposé sur internet reçoit en permanence des tentatives de connexion automatiques :
+scanners de ports, bots qui cherchent des services mal configurés, tentatives d'intrusion. Sans
+pare-feu, tous les ports du serveur sont accessibles depuis n'importe où dans le monde. C'est
+extrêmement dangereux.
+
+**ufw** (Uncomplicated Firewall) est l'outil de configuration du pare-feu sur Ubuntu. Il s'appuie
+sur `iptables` (le pare-feu Linux bas niveau) mais offre une interface beaucoup plus simple. La
+philosophie est simple : on part d'une politique **« deny all »** (bloquer tout trafic entrant par
+défaut), puis on ouvre uniquement les ports nécessaires.
+
+Les ports que nous ouvrons ont chacun une raison précise :
+- **22 (SSH)** : pour que les administrateurs puissent se connecter et exécuter des commandes.
+- **80 (HTTP)** : pour l'application en production (accessible au public).
+- **443 (HTTPS)** : pour la future version HTTPS de la production.
+- **8081 (staging)** : pour l'environnement de staging (accès restreint en pratique).
+- **8082 (vps-dev)** : pour l'environnement de développement VPS.
+
+Le module `community.general.ufw` est une collection Ansible tierce (non incluse par défaut) qui
+apporte le support d'ufw. Elle doit être installée via `ansible-galaxy collection install -r
+requirements.yml` avant d'utiliser le playbook. Le fichier `requirements.yml` déclare cette
+dépendance.
+
+**Comment réaliser cette tâche :**
+
+1. Crée `infra/ansible/requirements.yml` déclarant la collection `community.general`.
+2. Crée `roles/firewall/meta/main.yml` avec les métadonnées.
+3. Crée `roles/firewall/tasks/main.yml` : installe ufw, ajoute les règles `allow` pour chaque port,
+   puis active ufw avec `state: enabled` et `policy: deny` sur `incoming`. Termine par une task
+   de vérification avec `ufw status verbose`.
+4. Installe la collection avec `ansible-galaxy collection install -r requirements.yml` et lance
+   `ansible-lint roles/firewall/` pour vérifier.
+
 ## Objectif
 
 Créer le rôle Ansible `firewall` qui configure ufw sur le VPS pour autoriser SSH (22), HTTP/HTTPS (80/443), staging (8081) et dev-vps (8082), avec politique par défaut `deny incoming`.

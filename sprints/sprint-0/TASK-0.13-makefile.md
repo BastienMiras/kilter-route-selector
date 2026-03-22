@@ -5,6 +5,37 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.6, TASK-0.7, TASK-0.11, TASK-0.12
 
+## Description
+
+`make` est un outil historique initialement conçu pour compiler du code C, mais aujourd'hui
+largement utilisé comme **lanceur de commandes documentées** dans n'importe quel projet. Un
+`Makefile` définit des **cibles** (targets) avec leurs dépendances et les commandes à exécuter.
+L'avantage est simple : au lieu de mémoriser des commandes complexes, on tape `make up` ou
+`make deploy-dev`.
+
+Le Makefile joue le rôle d'interface uniforme pour tous les développeurs du projet. Peu importe
+que quelqu'un utilise podman, docker ou une autre variante — le Makefile abstrait ces détails.
+C'est aussi une forme de documentation vivante : `make help` affiche automatiquement la liste
+des cibles disponibles avec leur description.
+
+La cible `help` est auto-documentée grâce à un pattern `grep`/`awk` : elle lit le Makefile lui-même
+et affiche toutes les lignes qui contiennent `##` après le nom de la cible. C'est une convention
+populaire pour les Makefiles (pattern « self-documenting Makefile »).
+
+**Attention technique importante** : les indentations dans un Makefile doivent obligatoirement être
+des **tabulations** (`\t`), jamais des espaces. C'est une contrainte historique de make — un Makefile
+avec des espaces produit une erreur cryptique du type `*** missing separator`. La plupart des éditeurs
+peuvent être configurés pour insérer une tabulation avec la touche Tab dans les fichiers Makefile.
+
+**Comment réaliser cette tâche :**
+
+1. Crée `Makefile` à la racine du repo (pas dans `infra/`).
+2. Définis les variables `COMPOSE_DEV`, `ANSIBLE_PLAYBOOK`, `ANSIBLE_DIR` en haut du fichier.
+3. Ajoute les cibles `.PHONY` (cibles qui ne créent pas de fichiers) : `help`, `up`, `down`,
+   `build`, `logs`, `test`, `provision`, `deploy-dev`.
+4. Chaque cible doit avoir un commentaire `## description` sur la même ligne pour que `help` fonctionne.
+5. Vérifie que les indentations sont bien des tabulations, puis teste `make help` et `make up`.
+
 ## Objectif
 
 Créer le Makefile à la racine du repo exposant des raccourcis développeur pour les opérations courantes : démarrage local, build, tests, provisioning VPS et déploiement.

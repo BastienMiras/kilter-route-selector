@@ -5,6 +5,40 @@
 **Priorité** : Haute
 **Dépendances** : Aucune
 
+## Description
+
+**Ansible** est un outil d'automatisation de configuration de serveurs. Il permet d'écrire des
+instructions (en YAML) qui décrivent l'état désiré du serveur, et Ansible se charge de rendre cet
+état réel. Si Podman est déjà installé, Ansible ne fait rien (c'est l'**idempotence**). Si Podman
+n'est pas installé, Ansible l'installe. On peut relancer les playbooks autant de fois qu'on veut
+sans risque de casser quoi que ce soit.
+
+Un **rôle** Ansible est une unité réutilisable qui regroupe les tasks, templates et variables liés
+à une responsabilité précise. Le rôle `podman` n'a qu'une seule mission : s'assurer que Podman et
+podman-compose sont installés sur le serveur.
+
+`become: true` signifie qu'Ansible exécute la commande avec `sudo` — l'installation de paquets
+nécessite des droits administrateur. Les modules `ansible.builtin.apt` et `ansible.builtin.pip`
+sont les modules Ansible standards pour installer des paquets via apt (gestionnaire de paquets
+Ubuntu/Debian) et pip (gestionnaire de paquets Python).
+
+L'utilisation du **FQCN** (Fully Qualified Collection Name) comme `ansible.builtin.apt` au lieu de
+simplement `apt` est une bonne pratique : cela rend les playbooks explicites sur la provenance de
+chaque module et évite les ambiguïtés entre modules de même nom dans différentes collections.
+
+`changed_when: false` sur les tasks de vérification indique à Ansible que ces commandes ne
+modifient jamais l'état du système — elles ne font que lire — et donc elles ne doivent pas être
+comptées comme des changements dans le rapport d'exécution.
+
+**Comment réaliser cette tâche :**
+
+1. Crée la structure de dossiers des trois rôles : `roles/podman/`, `roles/firewall/`, `roles/app/`,
+   chacun avec des sous-dossiers `meta/` et `tasks/` (et `templates/` pour `app`).
+2. Écris `roles/podman/meta/main.yml` avec les métadonnées du rôle (nom, description, version Ansible).
+3. Écris `roles/podman/tasks/main.yml` avec les tasks d'installation de `podman` via apt, de `python3-pip`
+   via apt, puis de `podman-compose` via pip. Ajoute des tasks de vérification.
+4. Lance `ansible-lint roles/podman/` pour vérifier la conformité du code.
+
 ## Objectif
 
 Créer le rôle Ansible `podman` qui installe Podman et podman-compose sur un VPS Ubuntu/Debian via apt et pip, de manière idempotente.

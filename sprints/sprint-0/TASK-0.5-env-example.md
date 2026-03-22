@@ -5,6 +5,37 @@
 **Priorité** : Haute
 **Dépendances** : Aucune
 
+## Description
+
+Toute application a besoin de configuration qui varie selon l'environnement : l'adresse de la base de
+données n'est pas la même en local et en production, les clés d'API doivent rester secrètes, le niveau
+de log est plus verbeux en développement. Les **variables d'environnement** sont le mécanisme standard
+pour injecter cette configuration sans la coder en dur dans le source.
+
+La convention est d'avoir deux fichiers :
+- **`.env`** contient les vraies valeurs (secrets inclus). Il ne doit **jamais** être commité dans git
+  — n'importe qui ayant accès au dépôt verrait les clés d'API et mots de passe. C'est pourquoi il
+  est listé dans `.gitignore`.
+- **`.env.example`** est une version publique avec des valeurs fictives ou vides qui documente quelles
+  variables sont nécessaires. Quelqu'un qui clone le projet copie ce fichier, le renomme `.env` et
+  remplit les valeurs. Ce fichier est commité dans git.
+
+Cette convention vient du **12-factor app** (12factor.net), un ensemble de bonnes pratiques pour les
+applications modernes. Elle garantit que les secrets ne fuient jamais dans l'historique git.
+
+Le `.gitignore` protège aussi le dossier `data/` et les fichiers `.db` — la base de données SQLite
+est générée localement et ne doit pas être versionnée (trop lourde, et chaque développeur a sa propre).
+
+**Comment réaliser cette tâche :**
+
+1. Crée `infra/.env.example` avec les variables documentées dans l'exemple : `DATABASE_URL`,
+   `KILTER_API_TOKEN`, `ENVIRONMENT`, `LOG_LEVEL`. Ajoute des commentaires expliquant chaque variable.
+2. Ouvre `.gitignore` à la racine du repo et ajoute une section pour l'infrastructure : ignore
+   `infra/.env` et `infra/.env.*` mais pas `infra/.env.example` (via l'exception `!`). Ignore aussi
+   `data/` et `*.db`.
+3. Vérifie avec `git check-ignore infra/.env` que le fichier est bien ignoré, et que
+   `git check-ignore infra/.env.example` ne retourne rien (fichier bien tracké).
+
 ## Objectif
 
 Créer le fichier `.env.example` documentant toutes les variables d'environnement requises et mettre à jour `.gitignore` pour exclure les secrets et les données.

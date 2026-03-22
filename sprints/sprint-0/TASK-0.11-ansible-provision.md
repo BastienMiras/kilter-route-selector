@@ -5,6 +5,36 @@
 **Priorité** : Haute
 **Dépendances** : TASK-0.8, TASK-0.9, TASK-0.10
 
+## Description
+
+Les rôles Ansible créés dans les tâches précédentes sont des briques réutilisables, mais elles ne
+font rien par elles-mêmes. Un **playbook** est le fichier qui orchestre ces rôles : il dit « exécute
+ces rôles sur ces serveurs ». Un **inventaire** est la liste des serveurs sur lesquels Ansible doit
+opérer. Les **group_vars** sont les variables associées à chaque groupe de serveurs.
+
+Le **playbook de provisioning** ne s'exécute qu'une seule fois, lors de la création initiale du VPS
+(ou pour remettre un serveur à plat). Il installe Podman, configure le pare-feu, crée l'utilisateur
+`deploy` (un utilisateur dédié au déploiement, sans droits sudo inutiles) et crée les répertoires
+de données pour les trois environnements.
+
+Les **group_vars** permettent de définir des variables différentes selon l'environnement :
+- `group_vars/all.yml` : variables communes à tous les environnements.
+- `group_vars/dev.yml` : `env=dev`, `app_port=8082`, `image_tag=dev-latest`, `log_level=debug`.
+- `group_vars/staging.yml` : `env=staging`, `app_port=8081`, `log_level=info`.
+- `group_vars/prod.yml` : `env=prod`, `app_port=80`, `log_level=warning`.
+
+`ansible.cfg` configure les paramètres par défaut d'Ansible pour ce projet : chemin de l'inventaire,
+utilisateur SSH, clé privée, désactivation de la vérification d'empreinte SSH (pratique en dev).
+
+**Comment réaliser cette tâche :**
+
+1. Crée `infra/ansible/ansible.cfg` avec les chemins relatifs au projet.
+2. Crée `inventory/vps.yml` avec un placeholder `VPS_IP` à remplacer par l'IP réelle du serveur.
+3. Crée les fichiers `group_vars/` pour les quatre groupes (`all`, `dev`, `staging`, `prod`).
+4. Crée `playbook-provision.yml` qui applique les rôles `podman` et `firewall`, puis crée
+   l'utilisateur `deploy` et les répertoires `/opt/kilter-{dev,staging,prod}`.
+5. Vérifie avec `ansible-playbook --syntax-check playbook-provision.yml` et `ansible-lint .`.
+
 ## Objectif
 
 Créer l'inventaire Ansible, les variables par environnement et le playbook de provisioning qui bootstrap un VPS vierge (installation Podman, pare-feu, création de l'utilisateur deploy et des répertoires d'application).
