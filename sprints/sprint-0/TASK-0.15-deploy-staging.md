@@ -130,6 +130,16 @@ jobs:
       - name: Update VPS IP in inventory
         run: sed -i "s/VPS_IP/${{ secrets.VPS_HOST }}/g" infra/ansible/inventory/vps.yml
 
+      - name: Dry-run deploy (check mode)
+        run: |
+          ansible-playbook infra/ansible/playbook-deploy.yml \
+            --check \
+            -e env=staging \
+            -e "image_tag=${{ needs.build-and-push.outputs.image_tag }}" \
+            -e "ghcr_token=${{ secrets.GHCR_TOKEN }}"
+        # --check simule le déploiement sans modifier le serveur : détecte les
+        # erreurs de syntaxe Ansible et les droits manquants avant d'appliquer.
+
       - name: Deploy staging
         run: |
           ansible-playbook infra/ansible/playbook-deploy.yml \

@@ -32,9 +32,15 @@ l'interface GitHub pour que le déploiement continue. C'est la barrière de séc
 2. Dans le job `build-and-push` : extrait le tag de version depuis `GITHUB_REF` (variable d'environnement
    GitHub qui contient `refs/tags/v1.0.0`), pull les images `develop-latest`, re-tag et push.
 3. Dans le job `deploy` : ajoute `environment: production`. Le reste est identique au staging mais
-   avec `env=prod`.
+   avec `env=prod`. Ajoute un step `--check` (dry-run) avant le déploiement réel pour détecter les
+   erreurs Ansible sans toucher au serveur.
 4. Configure l'environnement `production` dans les settings GitHub du repo (Settings → Environments
    → New environment) et ajoute les reviewers requis.
+
+**Note TLS/HTTPS :** ce workflow déploie sur le port 80 (HTTP). Pour la production réelle, configurer
+HTTPS via Let's Encrypt (Certbot ou l'action `certbot/certbot-github-action`). Le certificat SSL doit
+être géré dans le rôle `firewall` ou dans un rôle `nginx` dédié. Cette tâche est prévue en **Sprint 3**
+lors de la finalisation de nginx.conf (TASK-3.4). En Sprint 0, HTTP est accepté pour le VPS staging.
 
 ## Objectif
 
@@ -46,7 +52,9 @@ Créer le workflow GitHub Actions de déploiement production déclenché sur les
 - [ ] Configurer le déclencheur sur `push` vers les tags `v*.*.*`
 - [ ] Ajouter le job `build-and-push` (extraction du tag de version, re-tag des images staging vers prod)
 - [ ] Ajouter le job `deploy` avec `environment: production` (approbation manuelle)
+- [ ] Ajouter le step Ansible `--check` (dry-run) avant le déploiement réel
 - [ ] Configurer l'environnement GitHub `production` dans les settings du repo
+- [ ] Documenter la procédure de rollback (re-déployer un tag précédent via Ansible)
 
 ## Structure attendue
 
@@ -130,6 +138,15 @@ jobs:
       - name: Update VPS IP in inventory
         run: sed -i "s/VPS_IP/${{ secrets.VPS_HOST }}/g" infra/ansible/inventory/vps.yml
 
+      - name: Dry-run deploy (check mode)
+        run: |
+          ansible-playbook infra/ansible/playbook-deploy.yml \
+            --check \
+            -e env=prod \
+            -e "image_tag=${{ needs.build-and-push.outputs.image_tag }}" \
+            -e "ghcr_token=${{ secrets.GHCR_TOKEN }}"
+        # --check détecte les erreurs Ansible avant d'appliquer en prod
+
       - name: Deploy production
         run: |
           ansible-playbook infra/ansible/playbook-deploy.yml \
@@ -137,6 +154,22 @@ jobs:
             -e "image_tag=${{ needs.build-and-push.outputs.image_tag }}" \
             -e "ghcr_token=${{ secrets.GHCR_TOKEN }}"
 ```
+
+**Procédure de rollback (si le déploiement prod casse quelque chose) :**
+```bash
+# 1. Identifier le dernier tag fonctionnel
+git tag --sort=-creatordate | head -5
+
+# 2. Re-déployer manuellement l'ancienne version via Ansible
+ansible-playbook infra/ansible/playbook-deploy.yml \
+  -e env=prod \
+  -e "image_tag=v1.2.3" \   # ← tag fonctionnel précédent
+  -e "ghcr_token=<token>"
+
+# 3. Ou via make (si Makefile configuré)
+make deploy-prod IMAGE_TAG=v1.2.3
+```
+Les images GHCR sont conservées avec leurs tags de version — un rollback ne nécessite pas de rebuild.
 
 **Setup GitHub Environments (manuel, une fois) :**
 ```

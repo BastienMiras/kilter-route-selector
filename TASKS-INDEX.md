@@ -49,10 +49,11 @@
 
 > Stack : Python 3.12, FastAPI, SQLite (BoardLib), aiosqlite, pytest
 
-### 📦 Setup Backend (3 tâches, ~4h)
+### 📦 Setup Backend (4 tâches, ~5h)
 1. `TASK-1.1` - Setup FastAPI + structure projet [2h] ✅ Créé
 2. `TASK-1.2` - Configuration SQLite + BoardLib [1h] ✅ Créé
 3. `TASK-1.3` - Schéma climb_metrics (table à créer) [1h] ✅ Créé
+4. `TASK-1.4` - TLS intra-conteneurs : vérifier que backend n'est pas exposé hors réseau Podman, documenter le flux Nginx → backend [1h]
 
 ### 🔍 Exploration BoardLib (2 tâches, ~3h)
 4. `TASK-2.1` - Download DB boardlib + explorer tables climbs [1h] ✅ Créé
@@ -222,6 +223,10 @@
 102. `TASK-7.3` - Compression data [3h]
 103. `TASK-7.4` - Analytics (Sentry) [3h]
 
+### 📊 Monitoring & Observabilité (2 tâches, ~8h)
+104. `TASK-8.1` - Monitoring centralisé : métriques VPS + alertes (Prometheus/Grafana ou UptimeRobot) [5h]
+105. `TASK-8.2` - Centralisation des logs conteneurs (Loki ou journald → stdout structuré) [3h]
+
 ---
 
 ## 📊 Statistiques
@@ -229,12 +234,12 @@
 | Catégorie | Sprint | Tâches | Heures |
 |-----------|--------|--------|--------|
 | Infra IaC | 0 | 17 | 16h |
-| Backend | 1 | 28 | 48h |
+| Backend | 1 | 29 | 49h |
 | Logic | 2 | 17 | 34h |
 | Client React | 3 | 19 | 40h |
 | UI/UX | 4 | 15 | 36h |
-| Advanced | 5+ | 24 | 82h |
-| **Total** | **6** | **120** | **256h** |
+| Advanced | 5+ | 26 | 90h |
+| **Total** | **6** | **123** | **265h** |
 
 ## 🎯 Milestones
 

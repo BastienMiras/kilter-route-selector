@@ -139,6 +139,8 @@ KILTER_API_TOKEN={{ kilter_api_token | default('') }}
   become: true
   environment:
     IMAGE_TAG: "{{ image_tag }}"
+  async: 300   # évite le timeout SSH sur les grosses images (jusqu'à 300s)
+  poll: 10
 
 - name: Start stack with podman-compose
   ansible.builtin.command: >

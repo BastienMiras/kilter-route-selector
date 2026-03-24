@@ -50,6 +50,7 @@ Créer le workflow GitHub Actions de CI qui bloque toute PR vers `develop` ou `m
 - [ ] Ajouter le job `lint-backend` (ruff, Python 3.12)
 - [ ] Ajouter le job `test-backend` (pytest, vacuous en Sprint 0)
 - [ ] Ajouter le job `build-images` (build Containerfile.backend + Containerfile.frontend + health-check)
+- [ ] Ajouter le job `validate-env` (vérifier cohérence `.env.example` ↔ `env.j2`)
 - [ ] Valider la syntaxe du workflow avec actionlint si disponible
 
 ## Structure attendue
@@ -111,6 +112,32 @@ jobs:
           curl --fail http://localhost:8000/health
           podman stop ci-backend
 ```
+
+**Validation cohérence `.env.example` ↔ `env.j2` (job optionnel, recommandé) :**
+```yaml
+  validate-env:
+    name: Validate .env.example matches env.j2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check variable names are in sync
+        run: |
+          # Extrait les clés de .env.example (lignes KEY=value, sans commentaires)
+          env_keys=$(grep -v '^#' infra/.env.example | grep '=' | cut -d= -f1 | sort)
+          # Extrait les clés de env.j2 (idem)
+          j2_keys=$(grep -v '^#' infra/ansible/roles/app/templates/env.j2 | grep '=' | cut -d= -f1 | sort)
+          if [ "$env_keys" != "$j2_keys" ]; then
+            echo "Drift détecté entre .env.example et env.j2 !"
+            diff <(echo "$env_keys") <(echo "$j2_keys")
+            exit 1
+          fi
+          echo "OK — clés identiques dans .env.example et env.j2"
+```
+
+Ce job prévient la dérive entre le fichier de documentation des variables (`.env.example`) et le
+template Ansible qui génère le `.env` sur le serveur (`env.j2`). Sans ce contrôle, un développeur
+peut ajouter une variable à `.env.example` sans l'ajouter à `env.j2`, et le serveur ne déploiera
+jamais cette variable.
 
 Notes importantes :
 - Les jobs lint et test frontend (eslint, vitest) sont intentionnellement absents — aucun code React n'existe en Sprint 0. Ils seront ajoutés en Sprint 3.
