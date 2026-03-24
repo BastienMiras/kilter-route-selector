@@ -32,12 +32,16 @@ comptées comme des changements dans le rapport d'exécution.
 
 **Comment réaliser cette tâche :**
 
-1. Crée la structure de dossiers des trois rôles : `roles/podman/`, `roles/firewall/`, `roles/app/`,
-   chacun avec des sous-dossiers `meta/` et `tasks/` (et `templates/` pour `app`).
-2. Écris `roles/podman/meta/main.yml` avec les métadonnées du rôle (nom, description, version Ansible).
-3. Écris `roles/podman/tasks/main.yml` avec les tasks d'installation de `podman` via apt, de `python3-pip`
+1. Crée le répertoire `infra/ansible/` et les sous-répertoires des trois rôles : `roles/podman/`,
+   `roles/firewall/`, `roles/app/`, chacun avec `meta/` et `tasks/` (et `templates/` pour `app`).
+2. **Crée `infra/ansible/ansible.cfg` dès maintenant** — c'est le fichier de configuration Ansible
+   local au projet. Il dit où trouver l'inventaire, quel utilisateur SSH utiliser, et désactive la
+   vérification d'empreinte SSH (utile en dev). Sans ce fichier, toutes les commandes `ansible-*`
+   doivent recevoir des paramètres manuellement à chaque appel. L'exemple est dans TASK-0.11.
+3. Écris `roles/podman/meta/main.yml` avec les métadonnées du rôle (nom, description, version Ansible).
+4. Écris `roles/podman/tasks/main.yml` avec les tasks d'installation de `podman` via apt, de `python3-pip`
    via apt, puis de `podman-compose` via pip. Ajoute des tasks de vérification.
-4. Lance `ansible-lint roles/podman/` pour vérifier la conformité du code.
+5. Lance `ansible-lint roles/podman/` pour vérifier la conformité du code.
 
 ## Objectif
 
@@ -45,7 +49,8 @@ Créer le rôle Ansible `podman` qui installe Podman et podman-compose sur un VP
 
 ## Checklist
 
-- [ ] Créer la structure de répertoires des rôles Ansible (`roles/podman/`, `roles/firewall/`, `roles/app/`)
+- [ ] Créer le répertoire `infra/ansible/` et la structure des trois rôles
+- [ ] Créer `infra/ansible/ansible.cfg` (voir exemple dans TASK-0.11)
 - [ ] Créer `infra/ansible/roles/podman/meta/main.yml`
 - [ ] Créer `infra/ansible/roles/podman/tasks/main.yml`
 - [ ] Linter le rôle avec `ansible-lint`
@@ -54,6 +59,7 @@ Créer le rôle Ansible `podman` qui installe Podman et podman-compose sur un VP
 
 ```
 infra/ansible/
+├── ansible.cfg          ← à créer dans cette tâche
 └── roles/
     ├── podman/
     │   ├── meta/

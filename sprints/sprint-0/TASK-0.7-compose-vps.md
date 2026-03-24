@@ -27,13 +27,26 @@ Le projet a **trois environnements sur le même VPS** :
 La variable `IMAGE_TAG` est configurable via l'environnement, avec une valeur par défaut. Cela
 permet à Ansible de déployer un tag précis (`develop-abc1234`) tout en ayant un fallback.
 
+**Différence clé avec `compose.dev.yml`** : en dev local, le backend est exposé directement sur
+`:8000` pour faciliter les tests directs. Sur le VPS, le backend **n'expose pas** de port — il
+est interne au réseau Podman et accessible uniquement via Nginx. Tout trafic passe par le
+frontend Nginx (`app_port`), qui joue le rôle de reverse proxy. C'est pourquoi `curl localhost:8000`
+ne fonctionne pas sur le VPS — il faut appeler `curl localhost:8081/api/health` (via Nginx).
+
+**GHCR_ORG** : le namespace GHCR (`ghcr.io/bastienmiras/...`) est spécifique au compte GitHub du
+projet. Si tu forkes le repo, remplace `bastienmiras` par ton nom d'utilisateur dans les trois
+fichiers compose et dans `group_vars/all.yml`. Pour le CI, la valeur vient de `ghcr_username` dans
+`group_vars/all.yml` — c'est la source de vérité unique.
+
 **Comment réaliser cette tâche :**
 
 1. Crée `infra/compose.vps-dev.yml` en vous basant sur le modèle : services `backend` et `frontend`
    avec `image: ghcr.io/bastienmiras/...`, `env_file` pointant vers `/opt/kilter-dev/.env`, port 8082.
 2. Crée `infra/compose.staging.yml` de la même façon avec le port 8081 et le tag `develop-latest`.
-3. Crée `infra/compose.prod.yml` avec le port 80, `restart: always` (redémarre automatiquement même
-   au reboot du serveur) et le tag `latest`.
+   Ajoute des `deploy.resources` (limites mémoire/CPU) pour éviter qu'un bug en staging n'épuise
+   les ressources du VPS et impacte les autres environnements.
+3. Crée `infra/compose.prod.yml` avec le port 80, `restart: always` et des `deploy.resources`
+   adaptées à la production. Le backend n'expose pas de port — seul le frontend Nginx est accessible.
 4. Valide la syntaxe des trois fichiers avec `podman-compose -f <fichier> config`.
 
 ## Objectif
@@ -99,6 +112,11 @@ services:
     env_file:
       - /opt/kilter-staging/.env
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256M"
 
   frontend:
     image: ghcr.io/bastienmiras/kilter-route-selector-frontend:${IMAGE_TAG:-develop-latest}
@@ -107,6 +125,11 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "64M"
 
 networks:
   default:
@@ -126,6 +149,11 @@ services:
     env_file:
       - /opt/kilter-prod/.env
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "512M"
 
   frontend:
     image: ghcr.io/bastienmiras/kilter-route-selector-frontend:${IMAGE_TAG:-latest}
@@ -134,6 +162,11 @@ services:
     depends_on:
       - backend
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "128M"
 
 networks:
   default:

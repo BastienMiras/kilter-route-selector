@@ -33,8 +33,12 @@ Ce workflow a deux jobs qui s'exécutent séquentiellement :
 2. Configure le job `build-and-push` avec le calcul du tag, le login GHCR, le build et le push des
    deux images. Expose le tag en `output` du job.
 3. Configure le job `deploy` qui dépend du premier, installe Ansible, écrit la clé SSH (permissions
-   `chmod 600` obligatoires), patche l'inventaire et lance le playbook.
-4. Documente les trois secrets GitHub requis : `GHCR_TOKEN`, `VPS_HOST`, `VPS_SSH_KEY`.
+   `chmod 600` obligatoires), patche l'inventaire et lance le playbook. Les secrets (`ghcr_token`,
+   `kilter_api_token`) sont passés via `-e` — jamais stockés dans les fichiers Ansible.
+4. Ajoute un job `cleanup-ghcr` qui supprime les images `develop-*` de plus de 30 jours dans GHCR
+   en utilisant l'action `actions/delete-package-versions`. Sans nettoyage, le registre accumule
+   des centaines d'images orphelines en quelques semaines.
+5. Documente les secrets GitHub requis : `GHCR_TOKEN`, `VPS_HOST`, `VPS_SSH_KEY`, `KILTER_API_TOKEN`.
 
 ## Objectif
 
@@ -47,6 +51,8 @@ Créer le workflow GitHub Actions de déploiement staging déclenché automatiqu
 - [ ] Ajouter le job `build-and-push` (calcul du tag, login GHCR, build + push backend et frontend)
 - [ ] Ajouter le job `deploy` (installation Ansible, écriture clé SSH, déploiement via playbook-deploy.yml)
 - [ ] Passer `image_tag` entre les jobs via `outputs`
+- [ ] Ajouter un job `cleanup-ghcr` pour supprimer les images `develop-*` de plus de 30 jours
+- [ ] Documenter les 4 secrets GitHub requis : `GHCR_TOKEN`, `VPS_HOST`, `VPS_SSH_KEY`, `KILTER_API_TOKEN`
 
 ## Structure attendue
 

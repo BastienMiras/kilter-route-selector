@@ -26,6 +26,11 @@ En développement, les ports sont exposés directement : backend sur 8000 et fro
 réseau interne `kilter-dev-net` permet aux conteneurs de se parler par leur nom de service (`backend`,
 `frontend`) sans passer par l'hôte.
 
+**Différence importante avec les compose VPS** : le backend est intentionnellement exposé sur `:8000`
+en dev local pour permettre les tests directs (`curl localhost:8000/health`, appels Swagger depuis le
+navigateur). Sur le VPS (staging, prod), le backend n'est **pas** exposé sur l'hôte — il est accessible
+uniquement via Nginx. C'est pourquoi `curl localhost:8000` ne fonctionne qu'en dev local.
+
 **Comment réaliser cette tâche :**
 
 1. Crée `infra/compose.dev.yml` avec les deux services `backend` et `frontend`.

@@ -25,15 +25,23 @@ Les **group_vars** permettent de définir des variables différentes selon l'env
 
 `ansible.cfg` configure les paramètres par défaut d'Ansible pour ce projet : chemin de l'inventaire,
 utilisateur SSH, clé privée, désactivation de la vérification d'empreinte SSH (pratique en dev).
+Ce fichier est créé dans **TASK-0.8** (première tâche Ansible) pour être disponible dès que l'on
+lance des commandes ansible-lint sur les rôles.
+
+**Gestion des secrets** : les valeurs sensibles (`ghcr_token`, clés API) ne doivent **jamais** être
+stockées dans `group_vars/` ni dans git. Le flux correct est :
+- `ghcr_token` est injecté au moment de l'appel depuis GitHub Secrets : `-e "ghcr_token=${{ secrets.GHCR_TOKEN }}"`
+- `kilter_api_token` suit le même principe : `-e "kilter_api_token=${{ secrets.KILTER_API_TOKEN }}"`
+- `group_vars/all.yml` contient seulement `ghcr_username` (non sensible) et un commentaire rappelant
+  que `ghcr_token` vient du CI. Ne jamais y mettre de valeur réelle.
 
 **Comment réaliser cette tâche :**
 
-1. Crée `infra/ansible/ansible.cfg` avec les chemins relatifs au projet.
-2. Crée `inventory/vps.yml` avec un placeholder `VPS_IP` à remplacer par l'IP réelle du serveur.
-3. Crée les fichiers `group_vars/` pour les quatre groupes (`all`, `dev`, `staging`, `prod`).
-4. Crée `playbook-provision.yml` qui applique les rôles `podman` et `firewall`, puis crée
+1. Crée `inventory/vps.yml` avec un placeholder `VPS_IP` à remplacer par l'IP réelle du serveur.
+2. Crée les fichiers `group_vars/` pour les quatre groupes (`all`, `dev`, `staging`, `prod`).
+3. Crée `playbook-provision.yml` qui applique les rôles `podman` et `firewall`, puis crée
    l'utilisateur `deploy` et les répertoires `/opt/kilter-{dev,staging,prod}`.
-5. Vérifie avec `ansible-playbook --syntax-check playbook-provision.yml` et `ansible-lint .`.
+4. Vérifie avec `ansible-playbook --syntax-check playbook-provision.yml` et `ansible-lint .`.
 
 ## Objectif
 
@@ -41,7 +49,7 @@ Créer l'inventaire Ansible, les variables par environnement et le playbook de p
 
 ## Checklist
 
-- [ ] Créer `infra/ansible/ansible.cfg`
+- [ ] Vérifier que `infra/ansible/ansible.cfg` existe (créé dans TASK-0.8)
 - [ ] Créer `infra/ansible/inventory/vps.yml`
 - [ ] Créer `infra/ansible/group_vars/all.yml`
 - [ ] Créer `infra/ansible/group_vars/dev.yml`
@@ -94,8 +102,9 @@ all:
 ```yaml
 # Common variables for all environments
 deploy_user: deploy
-ghcr_username: bastienmiras
-# ghcr_token: provided via CI secret or ansible-vault
+ghcr_username: bastienmiras  # TODO: replace with your GitHub username if forking
+# ghcr_token: NEVER store here — injected at deploy time via CI secret:
+#   ansible-playbook ... -e "ghcr_token=${{ secrets.GHCR_TOKEN }}"
 
 app_base_dir: /opt
 ```
