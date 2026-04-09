@@ -36,7 +36,7 @@ Local dev : compose.dev.yml (volumes montés, hot-reload)
 | 0.4 | Containerfile.frontend | 1h |
 | 0.5 | .env.example + .gitignore | 30min |
 | 0.6 | compose.dev.yml (local hot-reload) | 1h |
-| 0.7 | compose.vps-dev/staging/prod.yml | 1h |
+| 0.7 | compose.vps-dev/staging/prod.yml | 30min |
 | 0.8 | Ansible role: podman | 1h |
 | 0.9 | Ansible role: firewall | 1h |
 | 0.10 | Ansible role: app (deploy + health check) | 2h |
